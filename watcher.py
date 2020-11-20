@@ -7,7 +7,7 @@ sender_email = '@gmail.com'
 password = ''
 smtp_server = "smtp.gmail.com"
 port = 587
-receivers = ['yousif.mazeh@gmail.com']
+receivers = ['@gmail.com']
 
 
 def get_links(url):
