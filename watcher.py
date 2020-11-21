@@ -7,7 +7,10 @@ sender_email = '@gmail.com'
 password = ''
 smtp_server = "smtp.gmail.com"
 port = 587
-receivers = ['@gmail.com']
+
+
+def get_email_list():
+    return open("email_list.txt").readlines()
 
 
 def get_links(url):
@@ -16,12 +19,24 @@ def get_links(url):
 
 def get_content(url, field):
     return session.get(url).html.find(field)
-     
+
+
+def check_fuel():
+    global init_fuel
+    f = get_links('https://www.energyandwater.gov.lb/ar/home')
+    lookup_link = 'mediafiles/prices/1'
+    new_update = [d for d in f if lookup_link in d]
+    if init_fuel != new_update[0]:
+        init_fuel = new_update[0]
+        print("Fuel prices updated!", init_fuel)
+        send_emails(fuelUpdated=True)
+    
+    
 
 
 def check_us_treasury():
     global init_sanctions
-    lookup_keywords = ['lebanon', 'lebanese', 'beirut', 'syria', 'korea']
+    lookup_keywords = ['lebanon', 'lebanese', 'beirut']
     f = get_links("https://home.treasury.gov/policy-issues/financial-sanctions/recent-actions")
     lookup_link = "recent-actions/202"
     new_update = [d for d in f if lookup_link in d]
@@ -44,7 +59,8 @@ def init_email():
     server.ehlo()
     server.login(sender_email, password)
 
-def send_emails(treasuryUpdated=False, bdlUpdated=False):
+def send_emails(treasuryUpdated=False, bdlUpdated=False, fuelUpdated=False):
+    receivers = get_email_list()
     if treasuryUpdated:
         subject = 'US treasury has add new sanctions'
         message = '\nThe US treasury has added new sactions that might concern Lebanon, you can check it on the following link:\n'
@@ -55,6 +71,11 @@ def send_emails(treasuryUpdated=False, bdlUpdated=False):
         message = '\nBDL updated its balance sheet, you can download it from the following link:\n'
         name = "BDL Update"
         link = init_file
+    elif fuelUpdated:
+        subject = 'Fuel prices update'
+        message = '\nFuel prices have been updated, you can download it from the following link:\n'
+        name = "Fuel Prices Update"
+        link = init_fuel
     for receiver in receivers:
         server.sendmail(sender_email, receiver, build_message(receiver, name, subject, message, link))
 
@@ -63,8 +84,9 @@ session = HTMLSession()
 
 init_file = ''
 init_sanctions = ''
+init_fuel = ''
 
-def check_for_updates():
+def check_bdl():
     global init_file
     print('Checking...')
     f = get_links("https://bdl.gov.lb/tabs/index/6/287/BDL-Balance-Sheet.html")
@@ -91,8 +113,9 @@ init_email()
 
 while True:
     try:
-        check_for_updates()
+        check_bdl()
         check_us_treasury()
+        check_fuel()
         print('Checking again in 60 seconds.')
     except Exception as e:
         print('Error! ', e)
