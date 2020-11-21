@@ -77,7 +77,7 @@ def send_emails(treasuryUpdated=False, bdlUpdated=False, fuelUpdated=False):
         name = "Fuel Prices Update"
         link = init_fuel
     for receiver in receivers:
-        server.sendmail(sender_email, receiver, build_message(receiver, name, subject, message, link))
+        server.sendmail(sender_email, receiver, build_message(receiver.rstrip("\n"), name, subject, message, link))
 
 
 session = HTMLSession()
